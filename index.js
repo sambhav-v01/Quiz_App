@@ -1,5 +1,5 @@
 const questionParent = document.querySelector(".questions-container");
-const optionsParent = document.querySelector(".options-contianer");
+const optionsParent = document.querySelector(".options-container");
 const nextBtn = document.querySelector(".next");
 const quitBtn = document.querySelector(".quit");
 const quizCategory = document.querySelector(".quiz-category");
@@ -9,11 +9,14 @@ const quizBook = document.querySelector(".quiz");
 const playBtn = document.querySelector(".play-btn");
 const qnsCount = document.querySelector(".qns-count");
 const result = document.querySelector(".result");
+const resultText = document.querySelector(".result-text");
+const homeBtn = document.querySelector(".home-btn");
 
 
 let quizzes = [];
 let currentQuestion = 0;
 let score = 0;
+
 const getJson = async () => {
   try {
     const {
@@ -23,21 +26,30 @@ const getJson = async () => {
     );
     return results;
   } catch (err) {
-    console.log(err);
+    console.log("Fetch Error:", err);
   }
 };
 
 const getData = async () => {
   quizzes = await getJson();
-  console.log(quizzes);
-  console.log(quizzes.length);
 };
 
-getData();
+playBtn.addEventListener("click", async () => {
+  if (quizzes.length === 0) {
+    await getData();
+  }
 
-playBtn.addEventListener("click", () => {
-  quizBook.classList.remove("hide");
-  rules.classList.add("hide");
+  if (quizzes.length > 0) {
+    currentQuestion = 0;
+    score = 0;
+    questionParent.innerText = "";
+    optionsParent.innerText = "";
+    createQuestionAndOptions(quizzes, currentQuestion);
+    quizBook.classList.remove("hide");
+    rules.classList.add("hide");
+  } else {
+    alert("Could not load quiz. Try again.");
+  }
 });
 
 function createQuestionAndOptions(quizzes, currentQuestion) {
@@ -49,10 +61,12 @@ function createQuestionAndOptions(quizzes, currentQuestion) {
     quizzes[currentQuestion].question
   }`;
   questionParent.appendChild(questionEle);
-  let options = [
+
+  const options = [
     quizzes[currentQuestion].correct_answer,
     ...quizzes[currentQuestion].incorrect_answers,
   ].sort(() => Math.random() - 0.5);
+
   for (let option of options) {
     const optionBtn = document.createElement("button");
     optionBtn.classList.add("button");
@@ -65,23 +79,18 @@ function createQuestionAndOptions(quizzes, currentQuestion) {
 nextBtn.addEventListener("click", () => {
   if (nextBtn.innerText === "Next") {
     currentQuestion++;
-    console.log({
-      currentQuestion,
-    });
     questionParent.innerText = "";
     optionsParent.innerText = "";
-    qnsCount.innerText = `Q${currentQuestion + 1}/${quizzes.length}`;
     createQuestionAndOptions(quizzes, currentQuestion);
-    if (currentQuestion === 4) {
+    qnsCount.innerText = `Q${currentQuestion + 1}/${quizzes.length}`;
+    if (currentQuestion === quizzes.length - 1) {
       nextBtn.innerText = "Submit";
-      return;
     }
-  }
-  if (nextBtn.innerText === "Submit") {
-    console.log("here");
+  } else if (nextBtn.innerText === "Submit") {
     quizBook.classList.add("hide");
-    result.classList.remove("hide");
-    result.innerText=`Your Score : ${score}`
+   result.classList.remove("hide");
+resultText.innerText = `Your Score : ${score}`;
+
   }
 });
 
@@ -90,9 +99,9 @@ quitBtn.addEventListener("click", () => {
   questionParent.innerText = "";
   optionsParent.innerText = "";
   score = 0;
-  createQuestionAndOptions(quizzes, currentQuestion);
   rules.classList.remove("hide");
   quizBook.classList.add("hide");
+  nextBtn.innerText = "Next";
 });
 
 function disableOptions() {
@@ -107,17 +116,20 @@ optionsParent.addEventListener("click", (e) => {
     disableOptions();
     score++;
     scoreContiner.innerText = `Score: ${score}`;
-    console.log(score);
-  } else if (e.target.name !== quizzes[currentQuestion].correct_answer) {
+  } else {
     e.target.classList.add("error");
     disableOptions();
   }
 });
+homeBtn.addEventListener("click", () => {
+  // Reset everything
+  currentQuestion = 0;
+  score = 0;
+  questionParent.innerText = "";
+  optionsParent.innerText = "";
+  quizBook.classList.add("hide");
+  result.classList.add("hide");
+  nextBtn.innerText = "Next";
+  rules.classList.remove("hide");
+});
 
-// result=document.createElement("div");
-// result.classList.add("result","hide");
-// result.innerText=`Your Score ${score}`;
-
-
-
-setTimeout(() => createQuestionAndOptions(quizzes, currentQuestion), 2000);
